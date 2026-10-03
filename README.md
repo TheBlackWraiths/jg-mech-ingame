@@ -18,11 +18,10 @@ An in-game editor for the JG Mechanic config. Open it with a command, change sho
 ## Install
 
 1. Put the folder in your resources and add `ensure jg-mech-ingame` to `server.cfg`.
-2. Allow the script to write to JG Mechanic's folder and restart it. Add this to `server.cfg` or `permissions.cfg`, then restart the server:
+2. Allow the script to write to JG Mechanic's folder. Add this to `server.cfg` or `permissions.cfg`, then restart the server:
 
    ```
    add_filesystem_permission jg-mech-ingame write jg-mechanic
-   add_ace resource.jg-mech-ingame command.ensure allow
    ```
 
    Use your JG Mechanic folder name if it differs.
@@ -57,5 +56,5 @@ Edit `config.lua`:
 ## Troubleshooting
 
 - **"Could not write ..."**: the filesystem permission line above is missing, or the server wasn't restarted after adding it.
-- **Saved but JG Mechanic didn't restart**: the `add_ace ... command.ensure` line above is missing, or JG Mechanic isn't running (check the server console for a missing dependency).
+- **Saved but JG Mechanic didn't restart**: it failed to start again. Check the server console for a missing dependency.
 - **Couldn't load the config**: the resource must be named `jg-mechanic`, with its config at `config/config.lua`.

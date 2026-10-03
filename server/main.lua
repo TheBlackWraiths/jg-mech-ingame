@@ -138,17 +138,21 @@ lib.callback.register('jgmech:writeFile', function(src, data)
     end
 
     local state = GetResourceState(res)
+    print(('[jg-mech-ingame] %s wrote %s/%s, restarting %s (was %s)'):format(who(src), res, file, res, state))
 
-    if not IsPrincipalAceAllowed('resource.' .. GetCurrentResourceName(), 'command.ensure') then
-        print(('[jg-mech-ingame] %s wrote %s/%s but the server does not allow this resource to run "ensure"'):format(who(src), res, file))
-        return { warning = ('Saved, but the server blocked the restart. Add this to permissions.cfg and restart the server: add_ace resource.%s command.ensure allow'):format(GetCurrentResourceName()) }
+    if state == 'started' or state == 'starting' then
+        StopResource(res)
+        for _ = 1, 50 do
+            if GetResourceState(res) ~= 'started' and GetResourceState(res) ~= 'stopping' then break end
+            Wait(100)
+        end
     end
+    StartResource(res)
 
-    print(('[jg-mech-ingame] %s wrote %s/%s, ensuring %s (was %s)'):format(who(src), res, file, res, state))
-    ExecuteCommand('ensure ' .. res)
-
-    if state ~= 'started' then
-        return { warning = ('Saved, but %s was not running (%s). Check the server console: it may be missing a dependency such as jg-vehiclemileage.'):format(res, state) }
+    Wait(500)
+    local after = GetResourceState(res)
+    if after ~= 'started' and after ~= 'starting' then
+        return { warning = ('Saved, but %s is %s after the restart. Check the server console: it may be missing a dependency such as jg-vehiclemileage.'):format(res, after) }
     end
     return true
 end)
