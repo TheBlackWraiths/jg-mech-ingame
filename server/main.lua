@@ -138,6 +138,12 @@ lib.callback.register('jgmech:writeFile', function(src, data)
     end
 
     local state = GetResourceState(res)
+
+    if not IsPrincipalAceAllowed('resource.' .. GetCurrentResourceName(), 'command.ensure') then
+        print(('[jg-mech-ingame] %s wrote %s/%s but the server does not allow this resource to run "ensure"'):format(who(src), res, file))
+        return { warning = ('Saved, but the server blocked the restart. Add this to permissions.cfg and restart the server: add_ace resource.%s command.ensure allow'):format(GetCurrentResourceName()) }
+    end
+
     print(('[jg-mech-ingame] %s wrote %s/%s, ensuring %s (was %s)'):format(who(src), res, file, res, state))
     ExecuteCommand('ensure ' .. res)
 
