@@ -51,11 +51,10 @@ Edit `config.lua`:
 | --- | --- | --- |
 | `command` | `mechconfig` | Command that opens the editor |
 | `ace` | `admin` | Permission required |
-| `targetResource` / `configFile` | empty | JG Mechanic folder and config file. Leave empty to auto-detect |
 | `backupBeforeWrite` | `true` | Save a `.bak-<time>` copy before writing |
 
 ## Troubleshooting
 
 - **"Could not write ..."**: the filesystem permission line above is missing, or the server wasn't restarted after adding it.
 - **Saved but JG Mechanic didn't restart**: it isn't running. Check the server console for a missing dependency.
-- **Couldn't find the config**: set `targetResource` and `configFile` in `config.lua`.
+- **Couldn't load the config**: the resource must be named `jg-mechanic`, with its config at `config/config.lua`.

@@ -301,10 +301,6 @@ function Ser.findStatement(src, globalName, name)
     end
 end
 
-function Ser.findBlock(src, globalName, name)
-    return Ser.findStatement(src, globalName, name)
-end
-
 function Ser.equal(a, b)
     local ta = type(a)
     if ta ~= type(b) then return false end

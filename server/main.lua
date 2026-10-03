@@ -16,68 +16,7 @@ end)
 local function allowed(src) return IsPlayerAceAllowed(src, Cfg.ace) end
 local function who(src) return GetPlayerName(src) or tostring(src) end
 
-local found
-
-local function metaFiles(res)
-    local files, seen = {}, {}
-    local function add(f)
-        if f and not f:find('*', 1, true) and f:sub(1, 1) ~= '@' and not seen[f] then
-            seen[f] = true
-            files[#files + 1] = f
-        end
-    end
-    for _, key in ipairs({ 'shared_script', 'client_script', 'server_script', 'file' }) do
-        for i = 0, (GetNumResourceMetadata(res, key) or 0) - 1 do
-            add(GetResourceMetadata(res, key, i))
-        end
-    end
-    for _, f in ipairs({ 'config/config.lua', 'config.lua', 'config/shared.lua', 'shared/config.lua', 'config/locations.lua' }) do add(f) end
-    return files
-end
-
-local function fileHasSection(res, file)
-    local raw = LoadResourceFile(res, file)
-    if raw and #raw < 5 * 1024 * 1024 and Ser.findBlock(raw, G, Cfg.section) then return true end
-    return false
-end
-
-local function candidateResources()
-    local self = GetCurrentResourceName()
-    local strict, loose = {}, {}
-    for i = 0, GetNumResources() - 1 do
-        local name = GetResourceByFindIndex(i)
-        local l = name and name:lower()
-        if name and name ~= self then
-            if l:find('^jg[-_]?mech') then strict[#strict + 1] = name
-            elseif l:find('jg') and l:find('mech') then loose[#loose + 1] = name end
-        end
-    end
-    for _, n in ipairs(loose) do strict[#strict + 1] = n end
-    return strict
-end
-
-local function locate()
-    if found and fileHasSection(found.resource, found.file) then return found end
-    found = nil
-
-    if Cfg.targetResource and Cfg.targetResource ~= '' and Cfg.configFile and Cfg.configFile ~= '' then
-        found = { resource = Cfg.targetResource, file = Cfg.configFile }
-        return found
-    end
-
-    local resources = (Cfg.targetResource and Cfg.targetResource ~= '') and { Cfg.targetResource } or candidateResources()
-    for _, res in ipairs(resources) do
-        for _, file in ipairs(metaFiles(res)) do
-            if fileHasSection(res, file) then
-                found = { resource = res, file = file }
-                print(('[jg-mech-ingame] Found Config.%s in %s/%s'):format(Cfg.section, res, file))
-                return found
-            end
-        end
-    end
-    return nil, ('Could not find a resource defining Config.%s. Looked at: %s. Set targetResource/configFile in jg-mech-ingame/config.lua.')
-        :format(Cfg.section, #resources > 0 and table.concat(resources, ', ') or 'no resource with "jg" and "mech" in its name')
-end
+local TARGET = { resource = 'jg-mechanic', file = 'config/config.lua' }
 
 local function writeResourceFile(res, file, content)
     local function landed() return LoadResourceFile(res, file) == content end
@@ -100,17 +39,14 @@ local function writeResourceFile(res, file, content)
 end
 
 local function readConfig()
-    local loc, lerr = locate()
-    if not loc then return nil, lerr end
-
-    local raw = LoadResourceFile(loc.resource, loc.file)
-    if not raw then return nil, ('Cannot read %s/%s'):format(loc.resource, loc.file) end
+    local raw = LoadResourceFile(TARGET.resource, TARGET.file)
+    if not raw then return nil, ('Cannot read %s/%s. Is %s installed?'):format(TARGET.resource, TARGET.file, TARGET.resource) end
 
     local data, err, skipped = Ser.evaluate(raw, G)
-    if not data then return nil, ('%s/%s does not load: %s'):format(loc.resource, loc.file, tostring(err)) end
-    if not data[Cfg.section] then return nil, ('Config.%s not found in %s/%s'):format(Cfg.section, loc.resource, loc.file) end
+    if not data then return nil, ('%s/%s does not load: %s'):format(TARGET.resource, TARGET.file, tostring(err)) end
+    if not data.MechanicLocations then return nil, ('Config.MechanicLocations not found in %s/%s'):format(TARGET.resource, TARGET.file) end
 
-    return data, nil, skipped, loc
+    return data, nil, skipped, TARGET
 end
 
 lib.callback.register('jgmech:canOpen', function(src) return allowed(src) end)
@@ -180,9 +116,7 @@ lib.callback.register('jgmech:writeFile', function(src, data)
     if not allowed(src) then return false, 'No permission' end
     if type(data) ~= 'table' then return false, 'Invalid data' end
 
-    local loc, lerr = locate()
-    if not loc then return false, lerr end
-    local res, file = loc.resource, loc.file
+    local res, file = TARGET.resource, TARGET.file
 
     local old = LoadResourceFile(res, file)
     if not old then return false, ('Cannot read %s/%s'):format(res, file) end
